@@ -621,11 +621,13 @@ void CDockWidget::setMinimumSizeHintMode(eMinimumSizeHintMode Mode)
 	d->MinimumSizeHintMode = Mode;
 }
 
+
 //============================================================================
-ads::CDockWidget::eMinimumSizeHintMode CDockWidget::getMinimumSizeHintMode() const
+CDockWidget::eMinimumSizeHintMode CDockWidget::minimumSizeHintMode() const
 {
 	return d->MinimumSizeHintMode;
 }
+
 
 //============================================================================
 bool CDockWidget::isCentralWidget() const
@@ -995,15 +997,20 @@ void CDockWidget::setClosedState(bool Closed)
 //============================================================================
 QSize CDockWidget::minimumSizeHint() const
 {
-	if (d->MinimumSizeHintMode == CDockWidget::MinimumSizeHintFromDockWidget || !d->Widget)	
-		return QSize(60, 40);	
-	else if (d->MinimumSizeHintMode == CDockWidget::MinimumSizeHintFromDockWidgetMinimumSize)
-		return minimumSize();
-	else if (d->MinimumSizeHintMode == CDockWidget::MinimumSizeHintFromContentMinimumSize)
-		return d->Widget->minimumSize();
+	if (!d->Widget)
+	{
+		return QSize(60, 40);
+	}
 
-	// default from widget
-	return d->Widget->minimumSizeHint();	
+	switch (d->MinimumSizeHintMode)
+	{
+		case MinimumSizeHintFromDockWidget: return QSize(60, 40);
+    	case MinimumSizeHintFromContent: return d->Widget->minimumSizeHint();
+    	case MinimumSizeHintFromDockWidgetMinimumSize: return minimumSize();
+    	case MinimumSizeHintFromContentMinimumSize: return d->Widget->minimumSize();
+	}
+
+	return d->Widget->minimumSizeHint();
 }
 
 
