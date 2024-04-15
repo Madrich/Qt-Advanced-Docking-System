@@ -271,6 +271,10 @@ struct MainWindowPrivate
 		auto ToolBar = DockWidget->createDefaultToolBar();
 		ToolBar->addAction(ui.actionSaveState);
 		ToolBar->addAction(ui.actionRestoreState);
+		// For testing all calendar dock widgets have a the tool button style
+		// Qt::ToolButtonTextUnderIcon
+		DockWidget->setToolBarStyleSource(ads::CDockWidget::ToolBarStyleFromDockWidget);
+		DockWidget->setToolBarStyle(Qt::ToolButtonTextUnderIcon, ads::CDockWidget::StateFloating);
 		return DockWidget;
 	}
 
@@ -527,6 +531,7 @@ void MainWindowPrivate::createContent()
 
 	// Tests CustomCloseHandling without DeleteOnClose
 	LabelDockWidget->setFeature(ads::CDockWidget::CustomCloseHandling, true);
+	LabelDockWidget->setWindowTitle(LabelDockWidget->windowTitle() + " [Custom Close]");
 	QObject::connect(LabelDockWidget, &ads::CDockWidget::closeRequested, [LabelDockWidget, this]()
 	{
 		int Result = QMessageBox::question(_this, "Custom Close Request",
@@ -587,19 +592,29 @@ void MainWindowPrivate::createActions()
 	ui.toolBar->addAction(ui.actionRestoreState);
 	ui.actionRestoreState->setIcon(svgIcon(":/adsdemo/images/restore.svg"));
 
-	SavePerspectiveAction = new QAction("Create Perspective", _this);
-	SavePerspectiveAction->setIcon(svgIcon(":/adsdemo/images/picture_in_picture.svg"));
-	_this->connect(SavePerspectiveAction, SIGNAL(triggered()), SLOT(savePerspective()));
+	ui.toolBar->addSeparator();
+
+	QAction* a = ui.toolBar->addAction("Lock Workspace");
+	a->setIcon(svgIcon(":/adsdemo/images/lock_outline.svg"));
+	a->setCheckable(true);
+	a->setChecked(false);
+	QObject::connect(a, &QAction::triggered, _this, &CMainWindow::lockWorkspace);
+
 	PerspectiveListAction = new QWidgetAction(_this);
 	PerspectiveComboBox = new QComboBox(_this);
 	PerspectiveComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-	PerspectiveComboBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+	PerspectiveComboBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	PerspectiveListAction->setDefaultWidget(PerspectiveComboBox);
-	ui.toolBar->addSeparator();
 	ui.toolBar->addAction(PerspectiveListAction);
+
+	a = SavePerspectiveAction = ui.toolBar->addAction("Create Perspective");
+	a->setIcon(svgIcon(":/adsdemo/images/picture_in_picture.svg"));
+	QObject::connect(a, &QAction::triggered, _this, &CMainWindow::savePerspective);
 	ui.toolBar->addAction(SavePerspectiveAction);
 
-	QAction* a = ui.toolBar->addAction("Create Floating Editor");
+	ui.toolBar->addSeparator();
+
+	a = ui.toolBar->addAction("Create Floating Editor");
 	a->setProperty("Floating", true);
 	a->setToolTip("Creates floating dynamic dockable editor windows that are deleted on close");
 	a->setIcon(svgIcon(":/adsdemo/images/note_add.svg"));
@@ -621,6 +636,7 @@ void MainWindowPrivate::createActions()
 	_this->connect(a, SIGNAL(triggered()), SLOT(createEditor()));
 	ui.menuTests->addAction(a);
 
+	ui.toolBar->addSeparator();
 	a = ui.toolBar->addAction("Create Floating Table");
 	a->setToolTip("Creates floating dynamic dockable table with millions of entries");
 	a->setIcon(svgIcon(":/adsdemo/images/grid_on.svg"));
@@ -763,6 +779,7 @@ CMainWindow::CMainWindow(QWidget *parent) :
 
 	// Now create the dock manager and its content
 	d->DockManager = new CDockManager(this);
+	d->DockManager->setDockWidgetToolBarStyle(Qt::ToolButtonIconOnly, ads::CDockWidget::StateFloating);
 
  #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 	connect(d->PerspectiveComboBox, SIGNAL(activated(QString)),
@@ -1021,6 +1038,20 @@ void CMainWindow::createImageViewer()
 	else if (a->text().startsWith("Pinned"))
 	{
 		d->DockManager->addAutoHideDockWidget(ads::SideBarLeft, DockWidget);
+	}
+}
+
+
+//============================================================================
+void CMainWindow::lockWorkspace(bool Value)
+{
+	if (Value)
+	{
+		d->DockManager->lockDockWidgetFeaturesGlobally();
+	}
+	else
+	{
+		d->DockManager->lockDockWidgetFeaturesGlobally(ads::CDockWidget::NoDockWidgetFeatures);
 	}
 }
 

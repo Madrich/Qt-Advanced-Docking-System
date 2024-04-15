@@ -165,6 +165,7 @@ public:
         DefaultDockWidgetFeatures = DockWidgetClosable | DockWidgetMovable | DockWidgetFloatable | DockWidgetFocusable | DockWidgetPinnable,
         AllDockWidgetFeatures = DefaultDockWidgetFeatures | DockWidgetDeleteOnClose | CustomCloseHandling,
         DockWidgetAlwaysCloseAndDelete = DockWidgetForceCloseWithArea | DockWidgetDeleteOnClose,
+        GloballyLockableFeatures = DockWidgetClosable | DockWidgetMovable | DockWidgetFloatable | DockWidgetPinnable,
         NoDockWidgetFeatures = 0x000
     };
     Q_DECLARE_FLAGS(DockWidgetFeatures, DockWidgetFeature)
@@ -174,6 +175,12 @@ public:
         StateHidden,
         StateDocked,
         StateFloating
+    };
+
+    enum eToolBarStyleSource
+    {
+    	ToolBarStyleFromDockManager,
+    	ToolBarStyleFromDockWidget
     };
 
     /**
@@ -250,7 +257,7 @@ public:
      * by calling setObjectName() after construction.
      * Use the layoutFlags to configure the layout of the dock widget.
      */
-    CDockWidget(const QString &title, QWidget* parent = 0);
+    CDockWidget(const QString &title, QWidget* parent = nullptr);
 
     /**
      * Virtual Destructor
@@ -329,6 +336,11 @@ public:
      * DockWidgetMovable and DockWidgetFloatable.
      */
     DockWidgetFeatures features() const;
+
+    /**
+     * Triggers notification of feature change signals and functions
+     */
+    void notifyFeaturesChanged();
 
     /**
      * Returns the dock manager that manages the dock widget or 0 if the widget
@@ -410,6 +422,12 @@ public:
     QAction* toggleViewAction() const;
 
     /**
+     * Use provided action to be the default toggle view action for this dock widget.
+     * This dock widget now owns the action.
+     */
+    void setToggleViewAction(QAction* action);
+
+    /**
      * Configures the behavior of the toggle view action.
      * \see eToggleViewActionMode for a detailed description
      */
@@ -466,6 +484,17 @@ public:
      * on destruction
      */
     void setToolBar(QToolBar* ToolBar);
+
+    /**
+     * Configures, if the dock widget uses the global tool bar styles from
+     * dock manager or if it uses its own tool bar style
+     */
+    void setToolBarStyleSource(eToolBarStyleSource Source);
+
+    /**
+     * Returns the configured tool bar style source
+     */
+    eToolBarStyleSource toolBarStyleSource() const;
 
     /**
      * This function sets the tool button style for the given dock widget state.
